@@ -8,7 +8,7 @@ library(ggthemes)
 library(tidyr)
 
 ## Leemos los datos
-local_avan <- read_tsv("data/localmente_avanzadas.tsv")
+local_avan <- read_tsv("data_la_extra/localmente_avanzadas.tsv")
 
 ## Convertimos años a días y renombramos el status
 local_avan <- local_avan %>% 
@@ -27,7 +27,7 @@ gsp <- ggsurvplot(km_fit,
            title = "Distant relapse-free survival",
            legend = "none") 
 
-png(filename = "plots/KM.png", width = 800, height = 400)
+png(filename = "plots_la_extra/KM.png", width = 800, height = 400)
 print(gsp)
 dev.off()
 
@@ -48,13 +48,13 @@ gsp <- ggsurvplot(
   ggtheme = theme_bw(base_size = 14)      
 )
 
-png(filename = "plots/KM_RCB.png", width = 1000, height = 600)
+png(filename = "plots_la_extra/KM_RCB.png", width = 1000, height = 600)
 print(gsp)
 dev.off()
 
 ## Agregamos la expresión de los genes
-rma_data <- read_tsv("data/rs_rma_normalized.tsv")
-features <- read_tsv("data/features.tsv")
+rma_data <- read_tsv("data_la_extra/rs_rma_normalized.tsv")
+features <- read_tsv("data_la_extra/features.tsv")
 features <- features %>% filter(str_detect(gene_symbol,
                                            pattern = "GRIA4|NDUFAF3|SLC12A1"))
 rma_data <- rma_data %>% filter(feature %in% features$id) %>% 
@@ -86,7 +86,7 @@ gsp <- ggsurvplot(
   ggtheme = theme_bw(base_size = 14)      
 )
 
-png(filename = "plots/KM_GRIA4.png", width = 1000, height = 600)
+png(filename = "plots_la_extra/KM_GRIA4.png", width = 1000, height = 600)
 print(gsp)
 dev.off()
 
@@ -106,7 +106,7 @@ gsp <- ggsurvplot(
   ggtheme = theme_bw(base_size = 14)      
 )
 
-png(filename = "plots/KM_NDUFAF3.png", width = 1000, height = 600)
+png(filename = "plots_la_extra/KM_NDUFAF3.png", width = 1000, height = 600)
 print(gsp)
 dev.off()
 
@@ -126,6 +126,6 @@ gsp <- ggsurvplot(
   ggtheme = theme_bw(base_size = 14)      
 )
 
-png(filename = "plots/KM_SLC12A1.png", width = 1000, height = 600)
+png(filename = "plots_la_extra/KM_SLC12A1.png", width = 1000, height = 600)
 print(gsp)
 dev.off()

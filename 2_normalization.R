@@ -14,15 +14,15 @@ library(affyPLM)
 library(gcrma)
 
 # Creamos el directorio para guardar las gráficas
-dir.create("plots")
+dir.create("plots_la_extra")
 
 # Leemos el data frame con la información de las muestras
-local_avan <- read_tsv("data/localmente_avanzadas.tsv")
+local_avan <- read_tsv("data_la_extra/localmente_avanzadas.tsv")
 
 # local_avan <- read_tsv("data/localmente_avanzadas_pCR_RD.tsv")
 
 # Listamos los CEL files descargados en el paso anterior
-cel_files <- list.files(path = "raw", pattern = "*/*.CEL.gz", recursive = TRUE, full.names = T)
+cel_files <- list.files(path = "raw_la_extra/", pattern = "*/*.CEL.gz", recursive = TRUE, full.names = T)
 
 # cel_files <- list.files(path = "raw_pcr_rd", pattern = "*/*.CEL.gz", recursive = TRUE, full.names = T)
 
@@ -42,7 +42,7 @@ saveBoxPlot <- function(data, name) {
   low_name <- tolower(str_replace_all(name, " ", "_"))
   
   # Guardamos la gráfica
-  png(filename = paste0("plots/", low_name, "_boxplot.png"), width = 800, height = 400)
+  png(filename = paste0("plots_la_extra/", low_name, "_boxplot.png"), width = 800, height = 400)
   boxplot(data, names = NA, main = name)
   dev.off()
 }
@@ -65,7 +65,7 @@ saveDensityPlot <- function(data, name, group_data) {
     ggtitle(name)
   
   # Guardamos la gráfica
-  png(filename = paste0("plots/", low_name, "_density.png"), width = 800, height = 400)
+  png(filename = paste0("plots_la_extra/", low_name, "_density.png"), width = 800, height = 400)
   print(pl)
   dev.off()
   
@@ -87,15 +87,15 @@ saveBoxPlot(rma_data, "RMA normalized")
 saveDensityPlot(exprs(rma_data), "RMA normalized", local_avan %>% 
                   dplyr::select(name, rs_group))
 
-saveBoxPlot(rma_data, "RMA normalized pCR RD")
-saveDensityPlot(exprs(rma_data), "RMA normalized pCR RD", local_avan %>% 
-                  dplyr::select(name, rs_group))
+# saveBoxPlot(rma_data, "RMA normalized pCR RD")
+# saveDensityPlot(exprs(rma_data), "RMA normalized pCR RD", local_avan %>% 
+#                   dplyr::select(name, rs_group))
 
 # Guardamos los datos de expresión, con todo y el nombre de los features
 expr <- as.data.frame(exprs(rma_data))
 expr$feature <- rownames(expr)
 expr %>% dplyr::select(feature, everything())%>% 
-  write_tsv("data/rs_rma_normalized.tsv")
+  write_tsv("data_la_extra/rs_rma_normalized.tsv")
 
 # expr %>% dplyr::select(feature, everything())%>% 
 #   write_tsv("data/rs_rma_normalized_pcr_rd.tsv")

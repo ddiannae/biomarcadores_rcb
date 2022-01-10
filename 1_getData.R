@@ -15,7 +15,7 @@ library(janitor)
 library(GEOquery)
 
 # Creamos directorio para guardar los datos que obtenemos
-dir.create("data")
+dir.create("data_la_extra")
 
 # Obtenemos los datos del set de GEO
 gse <- getGEO("GSE25066", GSEMatrix=FALSE)
@@ -24,7 +24,7 @@ gse <- getGEO("GSE25066", GSEMatrix=FALSE)
 # Guardamos los datos de las features
 gse@gpls[[1]]@dataTable@table %>% clean_names() %>%
   select(id, gb_acc, spot_id, gene_title, gene_symbol, entrez_gene_id) %>%
-  write_tsv("data/features.tsv")
+  write_tsv("data_la_extra/features.tsv")
 
 # Analizando la primera muestra. Con Meta se obtiene la información asociada a la muestra
 sample1 <- Meta(GSMList(gse)[[1]])
@@ -70,14 +70,16 @@ gsms <- gsms %>% inner_join(gsms_names, by ="sample_id") %>%
 
 # Seleccionamos las muestras de pacientes localmente avanzadas                 
 local_avan <- gsms %>% 
-  filter(er_status_ihc == "P" & clinical_ajcc_stage %in% c("IIIA", "IIB", "IIIB", "IIIC"))
+  filter(er_status_ihc == "P" & 
+           clinical_ajcc_stage %in% c("IIA", "IIIA", "IIB", "IIIB", "IIIC"))
 
 # Agregamos el campo rs_group, para asignar R de resistente o S de sensible, según lo 
 # indicado en el campo rcs_class
 local_avan <- local_avan %>% 
   mutate(rs_group = ifelse(is.na(pathologic_response_rcb_class), NA, 
                               ifelse(pathologic_response_rcb_class %in% c("RCB-II", "RCB-III"), "R", "S"))) %>%
-  select(name, sample_id, rs_group, everything())
+  select(name, sample_id, rs_group, everything()) %>% 
+  filter(!is.na(rs_group))
 
 
 # Para filtrar por PCR RD
@@ -90,30 +92,30 @@ local_avan <- local_avan %>%
 head(local_avan)
 
 # Guardamos un archivo con datos de las pacientes resistentes
-local_avan %>% filter(rs_group =="R") %>% write_tsv("data/resistentes.tsv")
+local_avan %>% filter(rs_group =="R") %>% write_tsv("data_la_extra/resistentes.tsv")
 
 # Para almacenar RD
 # local_avan %>% filter(rs_group =="R") %>% write_tsv("data/resistentes_RD.tsv")
 
 # Guardamos un archivo con datos de las pacientes sensibles
-local_avan %>% filter(rs_group =="S") %>% write_tsv("data/sensibles.tsv")
+local_avan %>% filter(rs_group =="S") %>% write_tsv("data_la_extra/sensibles.tsv")
 
 # Para almacenar pCR
 # local_avan %>% filter(rs_group =="S") %>% write_tsv("data/sensibles_pCR.tsv")
 
 # Guardamos el data frame con todos los datos
-local_avan %>% write_tsv("data/localmente_avanzadas.tsv")
+local_avan %>% write_tsv("data_la_extra/localmente_avanzadas.tsv")
 
 # local_avan %>% write_tsv("data/localmente_avanzadas_pCR_RD.tsv")
 
 # Creamos directorio para guardar los CEL files
-dir.create("raw")
+dir.create("raw_la_extra")
 
 # dir.create("raw_pcr_rd")
 
 # Descargamos los CEL files usando los nombres en el data frame
 local_avan %>% filter(rs_group %in% c("R", "S")) %>% 
-  pull(name) %>% map(getGEOSuppFiles, baseDir = "raw")
+  pull(name) %>% map(getGEOSuppFiles, baseDir = "raw_la_extra")
 
 # local_avan %>% filter(rs_group %in% c("R", "S")) %>% 
 #   pull(name) %>% map(getGEOSuppFiles, baseDir = "raw_pcr_rd")

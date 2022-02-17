@@ -5,7 +5,7 @@ library(ggplot2)
 library(ggpubr)
 library(janitor)
 
-ihq <- read_csv("data_IHQ/IHQ.csv") %>%
+ihq <- read_csv("data_IHQ/IHQ_2022.csv") %>%
   clean_names()
 
 # a) Comparación de la expresión entre sensibles y resistentes
@@ -170,7 +170,7 @@ png(filename = "plots_IHQ/GRIA4_score.png", width = 800, height = 400)
 print(gp)
 dev.off()
 
-gp <- ggplot(pre_gria, aes(x = resistant, y = score_intensity_gri_apre_nac,
+gp <- ggplot(pre_gria, aes(x = resistant, y = score_positivity_gri_apre_nac,
                            color = resistant)) +
   geom_violin() +
   stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
@@ -206,4 +206,3 @@ gp <- ggplot(pre_gria, aes(x = resistant, y = score_intensity_gri_apre_nac,
 png(filename = "plots_IHQ/GRIA4_intensity.png", width = 800, height = 400)
 print(gp)
 dev.off()
-

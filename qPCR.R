@@ -1,6 +1,5 @@
 library(readr)
 library(dplyr)
-#library(tidyr)
 library(ggplot2)
 library(ggpubr)
 library(janitor)
@@ -13,8 +12,8 @@ dir.create("plots_qPCR")
 
 gp <- ggplot(qpcr, aes(x = resistant, y = ndufaf3,
                            color = resistant)) +
-  geom_boxplot() +
-  #stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F,) +
+  geom_violin() +
+  stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F,) +
   geom_point(position = position_jitter(seed = 1, width = 0.2)) +
   ylab("qPCR expression") +
   xlab("") +
@@ -25,14 +24,14 @@ gp <- ggplot(qpcr, aes(x = resistant, y = ndufaf3,
   theme(axis.text.x = element_blank()) +
   scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
   
-png(filename = "plots_qPCR/NDUFAF3_boxplot.png", width = 800, height = 400)
+png(filename = "plots_qPCR/NDUFAF3.png", width = 800, height = 400)
 print(gp)
 dev.off()
 
 gp <- ggplot(qpcr, aes(x = resistant, y = gria4,
                        color = resistant)) +
   geom_boxplot() +
-  #stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
+  stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
   geom_point(position = position_jitter(seed = 1, width = 0.2)) +
   ylab("qPCR expression") +
   xlab("") +
@@ -43,14 +42,14 @@ gp <- ggplot(qpcr, aes(x = resistant, y = gria4,
   theme(axis.text.x = element_blank())  +
   scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
 
-png(filename = "plots_qPCR/GRIA4_boxplot.png", width = 800, height = 400)
+png(filename = "plots_qPCR/GRIA4.png", width = 800, height = 400)
 print(gp)
 dev.off()
 
 gp <- ggplot(qpcr, aes(x = resistant, y = slc12a,
                        color = resistant)) +
   geom_boxplot() +
-  #stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
+  stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
   geom_point(position = position_jitter(seed = 1, width = 0.2)) +
   ylab("qPCR expression") +
   xlab("") +
@@ -61,6 +60,6 @@ gp <- ggplot(qpcr, aes(x = resistant, y = slc12a,
   theme(axis.text.x = element_blank())  +
   scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
 
-png(filename = "plots_qPCR/SLC12A_boxplot.png", width = 800, height = 400)
+png(filename = "plots_qPCR/SLC12A.png", width = 800, height = 400)
 print(gp)
 dev.off()

@@ -18,16 +18,16 @@ pre_nduf <- ihq %>% select(ihc_score_ndu_fpre_nac, score_positivity_ndu_fpre_nac
 
 gp <- ggplot(pre_nduf, aes(x = resistant, y = ihc_score_ndu_fpre_nac,
                            color = resistant)) +
-  geom_violin() +
+  geom_violin(size = 1) +
   stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
   geom_point(position = position_jitter(seed = 1, width = 0.2)) +
   ylab("IHC Score") +
   xlab("") +
   ggtitle("NDUFAF3 score preNAC") +
-  theme_bw(base_size = 18) +
+  theme_bw(base_size = 24) +
   stat_compare_means(method = "wilcox.test", show.legend = F,  label.y.npc = "bottom",
                      label.x.npc = "center") +
-  theme(axis.text.x = element_blank()) +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
   scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
 
 png(filename = "plots_IHQ/NDUFAF3_score.png", width = 800, height = 400)
@@ -36,16 +36,16 @@ dev.off()
 
 gp <- ggplot(pre_nduf, aes(x = resistant, y = score_positivity_ndu_fpre_nac,
                            color = resistant)) +
-  geom_violin() +
+  geom_violin(size = 1) +
   stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
   geom_point(position = position_jitter(seed = 1, width = 0.2)) +
   ylab("IHC Positivity") +
   xlab("") +
   ggtitle("NDUFAF3 score preNAC") +
-  theme_bw(base_size = 18) +
+  theme_bw(base_size = 24) +
   stat_compare_means(method = "wilcox.test", show.legend = F, label.y.npc = "bottom",
                      label.x.npc = "center") +
-  theme(axis.text.x = element_blank()) +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
   scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
 
 png(filename = "plots_IHQ/NDUFAF3_positivity.png", width = 800, height = 400)
@@ -54,16 +54,16 @@ dev.off()
 
 gp <- ggplot(pre_nduf, aes(x = resistant, y = score_intensity_ndu_fpre_nac,
                            color = resistant)) +
-  geom_violin() +
+  geom_violin(size = 1) +
   stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
   geom_point(position = position_jitter(seed = 1, width = 0.2)) +
   ylab("IHC Intensity") +
   xlab("") +
   ggtitle("NDUFAF3 score preNAC") +
-  theme_bw(base_size = 18) +
+  theme_bw(base_size = 24) +
   stat_compare_means(method = "wilcox.test", show.legend = F, label.y.npc = "bottom",
                      label.x.npc = "center") +
-  theme(axis.text.x = element_blank()) +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
   scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
 
 png(filename = "plots_IHQ/NDUFAF3_intensity.png", width = 800, height = 400)
@@ -93,16 +93,15 @@ r_nduf <- ihq %>% select(ic_bx1, ihc_score_ndu_fpre_nac,
   
 
 gp <- ggplot(r_nduf, aes(x = class, y = score, color = class)) +
-  geom_violin() +
+  geom_violin(size = 1) +
   stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
   geom_point(position = position_jitter(seed = 1, width = 0.2)) +
-  
   labs(x = "", y = "IHC Score", 
        title = "Resistant NDUFAF3 score preNAC vs posNAC") +
-  theme_bw(base_size = 18) +
+  theme_bw(base_size = 24) +
   stat_compare_means(method = "wilcox.test", show.legend = F, label.y.npc = "bottom",
                      label.x.npc = "center") +
-  theme(axis.text.x = element_blank()) +
+  scale_x_discrete(labels=c("preNac","posNac")) +
   scale_color_brewer(palette = "Set1", name = "")
 
 png(filename = "plots_IHQ/resistant_NDUFAF3_score.png", width = 800, height = 400)
@@ -110,15 +109,15 @@ print(gp)
 dev.off()
 
 gp <- ggplot(r_nduf, aes(x = class, y = intensity, color = class)) +
-  geom_violin() +
+  geom_violin(size = 1) +
   stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
   geom_point(position = position_jitter(seed = 1, width = 0.2)) +
   labs(x = "", y = "IHC Intensity", 
        title = "Resistant NDUFAF3 intensity preNAC vs posNAC") +
-  theme_bw(base_size = 18) +
+  theme_bw(base_size = 24) +
   stat_compare_means(method = "wilcox.test", show.legend = F, label.y.npc = "bottom",
                      label.x.npc = "center") +
-  theme(axis.text.x = element_blank()) +
+  scale_x_discrete(labels=c("preNac","posNac")) +
   scale_color_brewer(palette = "Set1", name = "")
 
 png(filename = "plots_IHQ/resistant_NDUFAF3_intensity.png", width = 800, height = 400)
@@ -126,15 +125,15 @@ print(gp)
 dev.off()
 
 gp <- ggplot(r_nduf, aes(x = class, y = positivity, color = class)) +
-  geom_violin() +
+  geom_violin(size = 1) +
   stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
   geom_point(position = position_jitter(seed = 1, width = 0.2)) +
   labs(x = "", y = "IHC Positivity", 
        title = "Resistant NDUFAF3 positivity preNAC vs posNAC") +
-  theme_bw(base_size = 18) +
+  theme_bw(base_size = 24) +
   stat_compare_means(method = "wilcox.test", show.legend = F, label.y.npc = "bottom",
                      label.x.npc = "center") +
-  theme(axis.text.x = element_blank()) +
+  scale_x_discrete(labels=c("preNac","posNac")) +
   scale_color_brewer(palette = "Set1", name = "")
 
 png(filename = "plots_IHQ/resistant_NDUFAF3_positivity.png", width = 800, height = 400)
@@ -154,16 +153,19 @@ pre_gria <- ihq %>% filter(pre_nac == 1) %>%
 
 gp <- ggplot(pre_gria, aes(x = resistant, y = ihc_score_gri_apre_nac,
                            color = resistant)) +
-  geom_violin() +
+  geom_violin(size = 1) +
   stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
   geom_point(position = position_jitter(seed = 1, width = 0.2)) +
   ylab("IHC Score") +
   xlab("") +
   ggtitle("GRIA4 score preNAC") +
-  theme_bw(base_size = 18) +
+  theme_bw(base_size = 24) +
+  geom_signif(comparisons = list(c("0", "1")), 
+              map_signif_level=TRUE, size = 1, color = "black", 
+              vjust = 0.5, textsize = 7) +
   stat_compare_means(method = "wilcox.test", show.legend = F, label.y.npc = "bottom",  
                      label.x.npc = "center") +
-  theme(axis.text.x = element_blank()) +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
   scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
 
 png(filename = "plots_IHQ/GRIA4_score.png", width = 800, height = 400)
@@ -172,16 +174,19 @@ dev.off()
 
 gp <- ggplot(pre_gria, aes(x = resistant, y = score_positivity_gri_apre_nac,
                            color = resistant)) +
-  geom_violin() +
+  geom_violin(size = 1) +
   stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
   geom_point(position = position_jitter(seed = 1, width = 0.2)) +
   ylab("IHC Positivity") +
   xlab("") +
   ggtitle("GRIA4 positivity preNAC") +
-  theme_bw(base_size = 18) +
+  geom_signif(comparisons = list(c("0", "1")), 
+              map_signif_level=TRUE, size = 1, color = "black", 
+              vjust = 0.5, textsize = 7) +
+  theme_bw(base_size = 24) +
   stat_compare_means(method = "wilcox.test", show.legend = F, label.y.npc = "bottom", 
                      label.x.npc = "center") +
-  theme(axis.text.x = element_blank()) +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
   scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
 
 png(filename = "plots_IHQ/GRIA4_positivity.png", width = 800, height = 400)
@@ -191,18 +196,19 @@ dev.off()
 
 gp <- ggplot(pre_gria, aes(x = resistant, y = score_intensity_gri_apre_nac,
                            color = resistant)) +
-  geom_violin() +
+  geom_violin(size = 1) +
   stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
   geom_point(position = position_jitter(seed = 1, width = 0.2)) +
   ylab("IHC Intensity") +
   xlab("") +
   ggtitle("GRIA4 intensity preNAC") +
-  theme_bw(base_size = 18) +
+  theme_bw(base_size = 24) +
   stat_compare_means(method = "wilcox.test", show.legend = F, label.y.npc = "bottom",
                      label.x.npc = "center") +
-  theme(axis.text.x = element_blank()) +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
   scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
 
 png(filename = "plots_IHQ/GRIA4_intensity.png", width = 800, height = 400)
 print(gp)
 dev.off()
+

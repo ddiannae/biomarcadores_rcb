@@ -5,20 +5,34 @@ library(dplyr)
 library(pathview)
 library(org.Hs.eg.db)
 library(ReactomePA)
+library(ggplot2)
 
 load("data_lncrna/deg_originales.RData")
 
 deg <- brca.res.df %>% janitor::clean_names() %>%
   filter(padj <= 0.05 & gene_biotype =="protein_coding") %>% as_tibble()
 
-ekk <- enrichKEGG(gene = deg %>% pull(entrezgene_id),
+deg_originales <- read_tsv("data_lncrna/299genesDE.csv") %>% janitor::clean_names()
+
+#deg_originales_protein <- deg_originales %>% filter(gene_biotype =="protein_coding")
+
+deg$ensembl_gene_id %in% deg_originales$ensembl_gene_id
+
+deg <- deg_originales_protein
+
+universe <-  brca.res.df %>% janitor::clean_names() %>%
+  filter(gene_biotype =="protein_coding") %>% as_tibble()
+
+ekk <- enrichKEGG(gene = deg_originales %>% pull(entrezgene),
                   organism = 'hsa',
                   keyType = "ncbi-geneid",
+                  universe = universe[["entrezgene_id"]],
                   pvalueCutoff = 0.05,
+                  pAdjustMethod = "fdr",
                   qvalueCutoff = 0.2)
 head(ekk)        
 
-geneList <- deg %>% pull(log2fold_change, name = entrezgene_id)
+geneList <- deg_originales %>% pull(log2fold_change, name = entrezgene)
 pathview(gene.data  = geneList,
              pathway.id = ekk@result %>% filter(p.adjust  < 0.05) %>% pull(ID),
              species    = "hsa",
@@ -30,7 +44,7 @@ pathview(gene.data  = geneList,
 universe <-  brca.res.df %>% janitor::clean_names() %>%
   filter(gene_biotype =="protein_coding") %>% as_tibble()
 
-ego <- enrichGO(gene =  deg %>% pull(entrezgene_id),
+ego <- enrichGO(gene = deg_originales %>% pull(entrezgene),
                universe      = universe[["entrezgene_id"]],
                OrgDb         = org.Hs.eg.db,
                ont           = "BP",
@@ -55,6 +69,7 @@ png(filename = "enrich_plots/go_plot.png", width = 1000, height = 400)
 cowplot::plot_grid(p1, p2, p3, ncol=3, labels=LETTERS[1:3], rel_widths=c(.8, .8, 1.2))
 dev.off()
 
+dotplot(ego, showCategory=30) + ggtitle("dotplot for ORA")
 
 epa = enrichPathway(deg %>% pull(entrezgene_id), 
                     pvalueCutoff=0.05)

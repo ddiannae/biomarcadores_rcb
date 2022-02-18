@@ -7,8 +7,14 @@ library(lubridate)
 library(survival)
 library(survminer)
 
-qpcr <- read_csv("data_qPCR/QPCR.csv") %>%
+qpcr <- read_csv("data_qPCR/originales_qPCR.csv") %>%
   clean_names() 
+
+datos_mama <- read_csv("data_qPCR/base_completa.csv") %>%
+  clean_names() 
+
+qpcr <- qpcr %>% inner_join(datos_mama, by = "folio") %>%
+  filter(q_pcr32 == 1)
 
 qpcr <- qpcr %>% mutate(resistant = as.factor(resistant), 
      days = as.numeric(pmin(difftime(last_fllowup, nac_start, units = "day"),

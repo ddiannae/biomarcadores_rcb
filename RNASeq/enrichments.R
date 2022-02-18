@@ -1,4 +1,5 @@
 library(readr)
+library(ggthemes)
 library(clusterProfiler)
 library(janitor)
 library(dplyr)
@@ -7,18 +8,9 @@ library(org.Hs.eg.db)
 library(ReactomePA)
 library(ggplot2)
 
-load("data_lncrna/deg_originales.RData")
+load("data/deg_originales.RData")
 
-deg <- brca.res.df %>% janitor::clean_names() %>%
-  filter(padj <= 0.05 & gene_biotype =="protein_coding") %>% as_tibble()
-
-deg_originales <- read_tsv("data_lncrna/299genesDE.csv") %>% janitor::clean_names()
-
-#deg_originales_protein <- deg_originales %>% filter(gene_biotype =="protein_coding")
-
-deg$ensembl_gene_id %in% deg_originales$ensembl_gene_id
-
-deg <- deg_originales_protein
+deg_originales <- read_tsv("data/299genesDE.csv") %>% janitor::clean_names()
 
 universe <-  brca.res.df %>% janitor::clean_names() %>%
   filter(gene_biotype =="protein_coding") %>% as_tibble()
@@ -30,19 +22,16 @@ ekk <- enrichKEGG(gene = deg_originales %>% pull(entrezgene),
                   pvalueCutoff = 0.05,
                   pAdjustMethod = "fdr",
                   qvalueCutoff = 0.2)
-head(ekk)        
+head(ekk)
+# Ninguna vía
 
-geneList <- deg_originales %>% pull(log2fold_change, name = entrezgene)
-pathview(gene.data  = geneList,
-             pathway.id = ekk@result %>% filter(p.adjust  < 0.05) %>% pull(ID),
-             species    = "hsa",
-             limit      = list(gene=max(abs(geneList)), cpd=1),
-             kegg.dir = "kegg_plots")
+# geneList <- deg_originales %>% pull(log2fold_change, name = entrezgene)
+# pathview(gene.data  = geneList,
+#              pathway.id = ekk@result %>% filter(p.adjust  < 0.05) %>% pull(ID),
+#              species    = "hsa",
+#              limit      = list(gene=max(abs(geneList)), cpd=1),
+#              kegg.dir = "kegg_plots")
 
-
-
-universe <-  brca.res.df %>% janitor::clean_names() %>%
-  filter(gene_biotype =="protein_coding") %>% as_tibble()
 
 ego <- enrichGO(gene = deg_originales %>% pull(entrezgene),
                universe      = universe[["entrezgene_id"]],
@@ -54,33 +43,17 @@ ego <- enrichGO(gene = deg_originales %>% pull(entrezgene),
                readable      = TRUE)
 head(ego)
 
-ego <- setReadable(ego, 'org.Hs.eg.db', 'ENTREZID')
-p1 <- cnetplot(ego, foldChange=geneList) + 
-  scale_color_gradient2(name='Log2FC', low='midnightblue', high='red4', 
-                        limits = c(-2, 2), oob = scales::squish)
-p2 <- cnetplot(ego, categorySize="pvalue", foldChange=geneList) + 
-  scale_color_gradient2(name='Log2FC', low='midnightblue', high='red4', 
-                        limits = c(-2, 2), oob = scales::squish)
-p3 <- cnetplot(ego, foldChange = geneList, circular = TRUE, colorEdge = TRUE) + 
-  scale_color_gradient2(name='Log2FC', low='midnightblue', high='red4', 
-                        limits = c(-2, 2), oob = scales::squish)
-
-png(filename = "enrich_plots/go_plot.png", width = 1000, height = 400)
-cowplot::plot_grid(p1, p2, p3, ncol=3, labels=LETTERS[1:3], rel_widths=c(.8, .8, 1.2))
+png(filename = paste0("plots/GO_enrichments.png"), width = 800, height = 800)
+dotplot(ego, showCategory=30) + ggtitle("GO enrichments") + 
+  theme_bw(base_size = 24)
 dev.off()
 
-dotplot(ego, showCategory=30) + ggtitle("dotplot for ORA")
-
-epa = enrichPathway(deg %>% pull(entrezgene_id), 
+epa = enrichPathway(deg_originales %>% pull(entrezgene),
+                    universe      = universe[["entrezgene_id"]],
                     pvalueCutoff=0.05)
 
-for(i in epa@result %>% filter(p.adjust  < 0.05) %>% pull(Description)) {
-  png(filename = paste0("enrich_plots/", i, "_500_500.png"), width = 500, height = 500)
-  print(viewPathway(i, 
-              readable = TRUE, 
-              foldChange = geneList) + 
-    scale_color_gradient2(name='Log2FC', low='midnightblue', high='red4', 
-                          limits = c(-2, 2), oob = scales::squish))
-  dev.off()
-}
-
+png(filename = paste0("plots/Reactome_enrichments.png"), width = 800, height = 800)
+dotplot(epa, showCategory=30, orderBy = "p.adjust", decreasing = FALSE) + 
+  ggtitle("Reactome pathways") + 
+  theme_bw(base_size = 24)
+dev.off()

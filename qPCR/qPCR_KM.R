@@ -1,4 +1,5 @@
-library(readr)
+library(readr) 
+library(readxl)
 library(dplyr)
 library(ggplot2)
 library(ggpubr)
@@ -7,17 +8,20 @@ library(lubridate)
 library(survival)
 library(survminer)
 
-qpcr <- read_csv("data_qPCR/originales_qPCR.csv") %>%
-  clean_names() 
 
-datos_mama <- read_csv("data_qPCR/base_completa.csv") %>%
-  clean_names() 
+pacientes <- read_excel("../data/Base de datos-Incanet-Patología-INCAN .xlsx", 
+                        skip = 2) %>% clean_names()
 
-qpcr <- qpcr %>% inner_join(datos_mama, by = "folio") %>%
-  filter(q_pcr32 == 1)
+qpcr <- read_excel("../data/Datos crudos.xlsx", sheet = "qPCR_n=24ER+", 
+                   skip = 1) %>% clean_names()
 
-qpcr <- qpcr %>% mutate(resistant = as.factor(resistant), 
-     days = as.numeric(pmin(difftime(last_fllowup, nac_start, units = "day"),
+qpcr <- qpcr %>% select(colnames(qpcr)[c(1,35:42)]) 
+colnames(qpcr) <- c("folio", "abhd14b", "ndufaf3", "tex264", "ghr", "gria4", 
+                    "hgd", "slc12a", "sostcd1")
+
+qpcr <- qpcr %>% inner_join(pacientes, by = "folio") %>%
+  mutate(resistance = as.factor(resistance), 
+     days = as.numeric(pmin(difftime(last_followup, nac_start, units = "day"),
             difftime(recurrence_date, nac_start, units = "day"), na.rm = TRUE)))
 
 km_fit <- survfit(Surv(days, recurrence) ~ 1, data=qpcr)
@@ -26,7 +30,7 @@ summary(km_fit, times = c(1,30,60,90*(1:10)))
 gsp <- ggsurvplot(km_fit, 
                   data = qpcr,
                   palette = '#1997c6',
-                  ggtheme = theme_bw(base_size = 16),
+                  ggtheme = theme_bw(base_size = 24),
                   title = "Relapse-free time",
                   legend = "none") 
 
@@ -36,7 +40,7 @@ print(gsp)
 dev.off()
 
 ## Fil del modelo separando en grupos Resistente o Sensible
-km_resp_fit <- survfit(Surv(days, recurrence) ~ resistant, data=qpcr)
+km_resp_fit <- survfit(Surv(days, recurrence) ~ resistance, data=qpcr)
 gsp <- ggsurvplot(
   km_resp_fit,
   data = qpcr,
@@ -48,8 +52,8 @@ gsp <- ggsurvplot(
   risk.table.col = "strata",
   legend.labs = c("RCB-0/RCB-I", "RCB-II/RCB-III"),
   legend.title = "Response",
-  risk.table.height = 0.25, 
-  ggtheme = theme_bw(base_size = 14)      
+  risk.table.height = 0.30, 
+  ggtheme = theme_bw(base_size = 24)      
 )
 
 png(filename = "plots_qPCR/KM_resistant.png", width = 1000, height = 600)
@@ -73,8 +77,8 @@ gsp <- ggsurvplot(
   risk.table.col = "strata",
   legend.labs = c("High", "Low"),
   legend.title = "GRIA4 Status",
-  risk.table.height = 0.25, 
-  ggtheme = theme_bw(base_size = 14)      
+  risk.table.height = 0.30, 
+  ggtheme = theme_bw(base_size = 24)      
 )
 
 png(filename = "plots_qPCR/KM_GRIA4.png", width = 1000, height = 600)
@@ -93,8 +97,8 @@ gsp <- ggsurvplot(
   risk.table.col = "strata",
   legend.labs = c("High", "Low"),
   legend.title = "SLC12A Status",
-  risk.table.height = 0.25, 
-  ggtheme = theme_bw(base_size = 14)      
+  risk.table.height = 0.30, 
+  ggtheme = theme_bw(base_size = 24)      
 )
 
 png(filename = "plots_qPCR/KM_SLC12A.png", width = 1000, height = 600)
@@ -112,9 +116,9 @@ gsp <- ggsurvplot(
   risk.table = TRUE,        
   risk.table.col = "strata",
   legend.labs = c("High", "Low"),
-  legend.title = "NDUFAF3 Status",
-  risk.table.height = 0.25, 
-  ggtheme = theme_bw(base_size = 14)      
+  legend.title = "NDUFAF3 Status",  
+  risk.table.height = 0.30, 
+  ggtheme = theme_bw(base_size = 24)      
 )
 
 png(filename = "plots_qPCR/KM_NDUFAF3.png", width = 1000, height = 600)

@@ -1,6 +1,7 @@
 library(survival)
 library(survminer)
 library(readr)
+library(readxl)
 library(stringr)
 library(dplyr)
 library(tidyr)
@@ -8,25 +9,34 @@ library(janitor)
 library(purrr)
 library(broom)
 
-qpcr <- read_csv("data_qPCR/originales_qPCR.csv") %>%
-  clean_names() 
+pacientes <- read_excel("../data/Base de datos-Incanet-Patología-INCAN .xlsx", 
+                        skip = 2) %>% clean_names()
 
-datos_mama <- read_csv("data_qPCR/base_completa.csv") %>%
-  clean_names() 
+qpcr <- read_excel("../data/Datos crudos.xlsx", sheet = "qPCR_n=24ER+", 
+                   skip = 1) %>% clean_names()
 
-qpcr <- qpcr %>% inner_join(datos_mama, by = "folio") %>%
-  filter(q_pcr32 == 1)
+qpcr <- qpcr %>% select(colnames(qpcr)[c(1,35:42)]) 
+colnames(qpcr) <- c("folio", "abhd14b", "ndufaf3", "tex264", "ghr", "gria4", 
+                    "hgd", "slc12a", "sostcd1")
 
-## Son las variables que seleccionaste
-qpcr <- qpcr %>% select(folio, recurrence, death, resistant, last_fllowup, 
-                        nac_start, recurrence_date,
-                        age, c_t, c_n, tnm, er,
-                        her2, ndufaf3, gria4, slc12a)
+qpcr <- qpcr %>% inner_join(pacientes, by = "folio") %>%
+  mutate(resistance = as.factor(resistance), 
+         days = as.numeric(pmin(difftime(last_followup, nac_start, units = "day"),
+                                difftime(recurrence_date, nac_start, units = "day"), na.rm = TRUE)))
 
-qpcr <- qpcr %>% mutate(resistant = as.factor(resistant), 
+
+## Las variables seleccionadas
+qpcr <- qpcr %>% select(recurrence, death, resistance, age, c_t, c_n, tnm, luminal_a, 
+                        luminal_b_her2neg, luminal_b_her2pos, folio,
+                        ndufaf3, gria4, slc12a, last_followup, nac_start, recurrence_date)
+
+qpcr <- qpcr %>% mutate(resistance = as.factor(resistance), 
           recurrence = as.factor(recurrence),
           death = as.factor(death),
-          days = as.numeric(pmin(difftime(last_fllowup, nac_start, units = "day"),
+          luminal_a = as.factor(luminal_a),
+          luminal_b_her2neg = as.factor(luminal_b_her2neg),
+          luminal_b_her2pos = as.factor(luminal_b_her2pos),
+          days = as.numeric(pmin(difftime(last_followup, nac_start, units = "day"),
             difftime(recurrence_date, nac_start, units = "day"), na.rm = TRUE)),
           tnm = as.numeric(grepl("^III", tnm)),
           c_t = if_else(c_t %in% c(1,2), 0, 1),
@@ -38,11 +48,9 @@ qpcr <- qpcr %>% mutate(resistant = as.factor(resistant),
           select(-ndufaf3, -gria4, -slc12a)
 
 
-
-
 ## variables independientes
-ivars <- c("recurrence", "death", "resistant")
-ovars <- c("days", "last_fllowup", "nac_start", "recurrence_date", "folio")
+ivars <- c("recurrence", "death", "resistance")
+ovars <- c("days", "last_followup", "nac_start", "recurrence_date", "folio")
 ## variables dependientes
 dvars <- colnames(qpcr)[!colnames(qpcr) %in% c(ivars, ovars)]
 
@@ -50,55 +58,63 @@ recurrence_stats <- map_chr(dvars, ~paste0("Surv(days, recurrence) ~", .x)) %>%
   map(.f = ~coxph(formula = as.formula(.x),  data = qpcr, id = folio)) %>% 
   map_df(.f = ~tidy(.x,  conf.int = TRUE, exponentiate = TRUE)) 
 
-#   term                   estimate std.error robust.se statistic  p.value conf.low     conf.high
-#   <chr>                     <dbl>     <dbl>     <dbl>     <dbl>    <dbl>    <dbl>         <dbl>
-# 1 age                       1.64      0.708     0.693    0.713  0.476     4.21e-1         6.38 
-# 2 c_t                       5.07      1.06      1.02     1.59   0.112     6.85e-1        37.5  
-# 3 c_n                       0.215     1.08      0.404   -3.80   0.000144  9.75e-2         0.475
-# 4 tnm                       3.10      1.06      1.01     1.12   0.264     4.26e-1        22.6  
-# 5 er                287868280.     9721.        0.500   38.9    0         1.08e+8 767119010.   
-# 6 her2                      0.823     0.802     0.770   -0.253  0.800     1.82e-1         3.72 
-# 7 gria4_statuslow           0.578     0.731     0.713   -0.769  0.442     1.43e-1         2.34 
-# 8 slc12a_statuslow          0.945     0.707     0.683   -0.0829 0.934     2.48e-1         3.60 
-# 9 ndufaf3_statuslow         1.18      0.671     0.648    0.258  0.796     3.32e-1         4.21 
-
-### El HR de ER es demasiado grande
+# A tibble: 10 × 8
+# term               estimate std.error robust.se statistic  p.value conf.low conf.high
+# <chr>                 <dbl>     <dbl>     <dbl>     <dbl>    <dbl>    <dbl>     <dbl>
+# 1 age                   1.49      0.732     0.707     0.564 0.573      0.373      5.95 
+# 2 c_t                   3.48      1.07      1.02      1.23  0.220      0.475     25.5  
+# 3 c_n                   0.245     1.10      0.441    -3.18  0.00146    0.103      0.583
+# 4 tnm                   2.13      1.07      1.00      0.753 0.451      0.299     15.1  
+# 5 luminal_a1            7.03      0.744     0.575     3.39  0.000692   2.28      21.7  
+# 6 luminal_b_her2neg1    0.360     0.709     0.664    -1.54  0.124      0.0979     1.32 
+# 7 luminal_b_her2pos1    0.636     1.07      0.986    -0.459 0.646      0.0921     4.39 
+# 8 gria4_statuslow       0.633     0.731     0.708    -0.645 0.519      0.158      2.54 
+# 9 slc12a_statuslow      0.714     0.731     0.694    -0.485 0.628      0.183      2.78 
+# 10 ndufaf3_statuslow    0.528     0.731     0.695    -0.918 0.359      0.135      2.06 
 
 
 ## Fit del modelo con todas las muestras
-cox_model <- coxph(Surv(days, recurrence) ~ c_n+gria4_status+slc12a_status+ndufaf3_status, 
+cox_model <- coxph(Surv(days, recurrence) ~ c_n+luminal_a+gria4_status+slc12a_status+ndufaf3_status, 
                    data = qpcr,  id = folio) %>% tidy(conf.int = TRUE, exponentiate = TRUE)
 
-#   term              estimate std.error robust.se statistic p.value conf.low conf.high
-#   <chr>                <dbl>     <dbl>     <dbl>     <dbl>   <dbl>    <dbl>     <dbl>
-# 1 c_n                  0.181     1.30      0.647    -2.64  0.00831   0.0511     0.644
-# 2 gria4_statuslow      0.890     0.931     0.815    -0.143 0.886     0.180      4.39 
-# 3 slc12a_statuslow     0.681     0.965     0.988    -0.389 0.698     0.0982     4.73 
-# 4 ndufaf3_statuslow    0.859     0.921     0.947    -0.160 0.873     0.134      5.50 
-
+# A tibble: 5 × 8
+# term              estimate std.error robust.se statistic p.value conf.low conf.high
+# <chr>                <dbl>     <dbl>     <dbl>     <dbl>   <dbl>    <dbl>     <dbl>
+# 1 c_n                  0.206     1.48      1.21     -1.30   0.194    0.0191      2.23
+# 2 luminal_a1          19.4       1.32      1.43      2.07   0.0381   1.18      320.  
+# 3 gria4_statuslow      2.17      0.946     0.684     1.13   0.256    0.569       8.31
+# 4 slc12a_statuslow     0.197     1.08      0.982    -1.66   0.0977   0.0287      1.35
+# 5 ndufaf3_statuslow    0.791     1.27      1.27     -0.184  0.854    0.0657      9.53
 
 death_stats <- map_chr(dvars, ~paste0("Surv(days, death) ~", .x)) %>%
   map(.f = ~coxph(formula = as.formula(.x),  data = qpcr, id = folio)) %>% 
   map_df(.f = ~tidy(.x,  conf.int = TRUE, exponentiate = TRUE)) 
 
-#   term              estimate std.error robust.se statistic   p.value conf.low conf.high
-#   <chr>                <dbl>     <dbl>     <dbl>     <dbl>     <dbl>    <dbl>     <dbl>
-# 1 age                1.37e+9  20224.       0.559   37.6    3.58e-310  4.59e+8   4.11e+9
-# 2 c_t                1.95e+0      1.16     1.10     0.607  5.44e-  1  2.25e-1   1.69e+1
-# 3 c_n                7.36e-2      1.23     0.692   -3.77   1.62e-  4  1.90e-2   2.85e-1
-# 4 tnm                1.19e+0      1.16     1.09     0.157  8.75e-  1  1.39e-1   1.02e+1
-# 5 er                 2.91e+8  14479.       0.619   31.5    2.15e-217  8.64e+7   9.79e+8
-# 6 her2               9.76e-1      1.16     1.10    -0.0223 9.82e-  1  1.13e-1   8.43e+0
-# 7 gria4_statuslow    3.40e-1      1.15     1.14    -0.947  3.44e-  1  3.65e-2   3.17e+0
-# 8 slc12a_statuslow   3.27e-1      1.15     1.12    -1.00   3.16e-  1  3.66e-2   2.91e+0
-# 9 ndufaf3_statuslow  1.50e+0      1.00     0.969    0.420  6.74e-  1  2.25e-1   1.00e+1
+# A tibble: 10 × 8
+# term               estimate std.error robust.se statistic   p.value conf.low conf.high
+# <chr>                 <dbl>     <dbl>     <dbl>     <dbl>     <dbl>    <dbl>     <dbl>
+# 1 age                1.45e+ 9  20160.       0.574   36.7    3.05e-295 4.70e+ 8   4.47e+9
+# 2 c_t                1.52e+ 0      1.16     1.08     0.386  7.00e-  1 1.82e- 1   1.27e+1
+# 3 c_n                1.01e- 1      1.23     0.690   -3.33   8.75e-  4 2.61e- 2   3.89e-1
+# 4 tnm                9.26e- 1      1.16     1.07    -0.0717 9.43e-  1 1.14e- 1   7.55e+0
+# 5 luminal_a1         1.32e- 8  15630.       0.906  -20.0    3.52e- 89 2.24e- 9   7.80e-8
+# 6 luminal_b_her2neg1 1.04e+ 0      1.16     1.10     0.0325 9.74e-  1 1.19e- 1   8.99e+0
+# 7 luminal_b_her2pos1 1.46e+ 0      1.16     1.06     0.358  7.20e-  1 1.84e- 1   1.16e+1
+# 8 gria4_statuslow    3.81e- 1      1.15     1.14    -0.851  3.95e-  1 4.11e- 2   3.52e+0
+# 9 slc12a_statuslow   7.61e-10  20306.       0.584  -35.9    1.29e-282 2.42e-10   2.39e-9
+# 10 ndufaf3_statuslow  8.76e- 1      1.00     0.943   -0.140  8.88e-  1 1.38e- 1   5.56e+0
 
-cox_model_death <- coxph(Surv(days, death) ~ c_n+gria4_status+slc12a_status+ndufaf3_status, 
+## Hay valores que tienen gran error std.
+## Como no salieron variables significativas, ponemos las mismas que en el modelo 
+## multivariado anterior.
+
+cox_model_death <- coxph(Surv(days, death) ~ c_n+luminal_a+gria4_status+slc12a_status+ndufaf3_status, 
                    data = qpcr,  id = folio) %>% tidy(conf.int = TRUE, exponentiate = TRUE)
-# A tibble: 4 × 8
-#   term              estimate std.error robust.se statistic   p.value conf.low conf.high
-#   <chr>                <dbl>     <dbl>     <dbl>     <dbl>     <dbl>    <dbl>     <dbl>
-# 1 c_n               2.99e-10      1.23     0.684   -32.0   2.61e-225 7.83e-11   1.14e-9
-# 2 gria4_statuslow   1.17e+ 0      1.16     1.13      0.140 8.88e-  1 1.27e- 1   1.08e+1
-# 3 slc12a_statuslow  2.05e- 9      1.23     0.684   -29.2   7.27e-188 5.36e-10   7.84e-9
-# 4 ndufaf3_statuslow 1.10e+ 0      1.02     0.797     0.117 9.07e-  1 2.30e- 1   5.23e+0
+# # A tibble: 5 × 8
+# term                   estimate std.error robust.se statistic   p.value conf.low conf.high
+# <chr>                     <dbl>     <dbl>     <dbl>     <dbl>     <dbl>    <dbl>     <dbl>
+# 1 c_n               0.290              1.23     0.674    -1.84  6.63e-  2 7.73e- 2   1.09e+0
+# 2 luminal_a1        0.0000000317   18949.       1.40    -12.3   8.10e- 35 2.03e- 9   4.95e-7
+# 3 gria4_statuslow   1.66               1.16     1.13      0.449 6.53e-  1 1.80e- 1   1.53e+1
+# 4 slc12a_statuslow  0.00000000300   9877.       0.602   -32.6   6.98e-233 9.22e-10   9.77e-9
+# 5 ndufaf3_statuslow 0.548              1.02     0.823    -0.731 4.65e-  1 1.09e- 1   2.75e+0

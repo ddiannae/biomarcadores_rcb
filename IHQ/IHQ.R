@@ -6,10 +6,6 @@ library(ggplot2)
 library(ggpubr)
 library(janitor)
 
-
-pacientes <- read_excel("../data/Base de datos-Incanet-Patología-INCAN .xlsx", 
-                   skip = 2) 
-
 ihq <- read_excel("../data/Datos crudos.xlsx", sheet = "IHQ_n=31ER+", skip=3, 
           col_names = c("folio", "resistant", "NDUFAF3_porcentaje_positividad",
                         "NDUFAF3_positividad", "NDUFAF3_intensidad", "NDUFAF3_score", 

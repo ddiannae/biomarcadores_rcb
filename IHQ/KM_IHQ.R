@@ -1,4 +1,5 @@
 library(readr)
+library(readxl)
 library(dplyr)
 library(ggplot2)
 library(ggpubr)
@@ -7,11 +8,18 @@ library(lubridate)
 library(survival)
 library(survminer)
 
-ihq <- read_csv("data_IHQ/IHQ_2022.csv") %>%
-  clean_names()
+pacientes <- read_excel("../data/Base de datos-Incanet-Patología-INCAN .xlsx", 
+                        skip = 2)  %>% clean_names()
 
+ihq <- read_excel("../data/Datos crudos.xlsx", sheet = "IHQ_n=31ER+", skip=3, 
+                  col_names = c("folio", "resistant", "NDUFAF3_porcentaje_positividad",
+                                "NDUFAF3_positividad", "NDUFAF3_intensidad", "NDUFAF3_score", 
+                                "GRIA4_porcentaje_positividad",  "GRIA4_positividad", 
+                                "GRIA4_intensidad", "GRIA4_score")) 
+
+ihq <- ihq %>% inner_join(pacientes, by = "folio")
 ihq <- ihq %>% mutate(resistant = as.factor(resistant), 
-            days = as.numeric(pmin(difftime(last_fllowup, nac_start, units = "day"),
+            days = as.numeric(pmin(difftime(last_followup, nac_start, units = "day"),
             difftime(recurrence_date, nac_start, units = "day"), na.rm = TRUE)))
 
 km_fit <- survfit(Surv(days, recurrence) ~ 1, data=ihq)
@@ -20,11 +28,11 @@ summary(km_fit, times = c(1,30,60,90*(1:10)))
 gsp <- ggsurvplot(km_fit, 
                   data = ihq,
                   palette = '#1997c6',
-                  ggtheme = theme_bw(base_size = 16),
+                  ggtheme = theme_bw(base_size = 25),
                   title = "Relapse-free time",
                   legend = "none") 
 
-png(filename = "plots_IHQ/KM.png", width = 800, height = 400)
+png(filename = "plots_IHQ/KM.png", width = 1000, height = 500)
 print(gsp)
 dev.off()
 
@@ -40,16 +48,16 @@ gsp <- ggsurvplot(
   risk.table.col = "strata",
   legend.labs = c("RCB-0/RCB-I", "RCB-II/RCB-III"),
   legend.title = "Response",
-  risk.table.height = 0.25, 
-  ggtheme = theme_bw(base_size = 14)      
+  risk.table.height = 0.30, 
+  ggtheme = theme_bw(base_size = 24)      
 )
 
-png(filename = "plots_IHQ/KM_resistant.png", width = 1000, height = 600)
+png(filename = "plots_IHQ/KM_resistant_sensitive.png", width = 1000, height = 600)
 print(gsp)
 dev.off()
 
-ihq <- ihq %>% mutate(gria4_status = if_else(ihc_score_gri_apre_nac >= median(ihq[["ihc_score_gri_apre_nac"]], na.rm = TRUE), "high", "low"),
-         ndufaf3_status = if_else(ihc_score_ndu_fpre_nac >=median(ihq[["ihc_score_ndu_fpre_nac"]], na.rm = TRUE), "high", "low"))
+ihq <- ihq %>% mutate(gria4_status = if_else(GRIA4_score >= median(ihq[["GRIA4_score"]], na.rm = TRUE), "high", "low"),
+         ndufaf3_status = if_else(NDUFAF3_score >=median(ihq[["NDUFAF3_score"]], na.rm = TRUE), "high", "low"))
 
 km_gria4_fit <- survfit(Surv(days, recurrence) ~ gria4_status, data=ihq)
 gsp <- ggsurvplot(
@@ -63,8 +71,8 @@ gsp <- ggsurvplot(
   risk.table.col = "strata",
   legend.labs = c("High", "Low"),
   legend.title = "GRIA4 Status",
-  risk.table.height = 0.25, 
-  ggtheme = theme_bw(base_size = 14)      
+  risk.table.height = 0.30, 
+  ggtheme = theme_bw(base_size = 24)      
 )
 
 png(filename = "plots_IHQ/KM_GRIA4.png", width = 1000, height = 600)
@@ -83,8 +91,8 @@ gsp <- ggsurvplot(
   risk.table.col = "strata",
   legend.labs = c("High", "Low"),
   legend.title = "GRIA4 Status",
-  risk.table.height = 0.25, 
-  ggtheme = theme_bw(base_size = 14)      
+  risk.table.height = 0.30, 
+  ggtheme = theme_bw(base_size = 24)      
 )
 
 png(filename = "plots_IHQ/KM_NDUFAF3.png", width = 1000, height = 600)

@@ -1,214 +1,267 @@
 library(readr)
+library(readxl)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(ggpubr)
 library(janitor)
 
-ihq <- read_csv("data_IHQ/IHQ_2022.csv") %>%
-  clean_names()
 
-# a) Comparación de la expresión entre sensibles y resistentes
-# antes de recibir la quimio: IHC_score_NDUFpreNAC (sensibles vs resistentes)
-pre_nduf <- ihq %>% select(ihc_score_ndu_fpre_nac, score_positivity_ndu_fpre_nac, 
-                           score_intensity_ndu_fpre_nac,
-                           rcb_class, resistant) %>%
-  filter(!is.na(ihc_score_ndu_fpre_nac)) %>%
-  mutate(resistant = as.factor(resistant))
+pacientes <- read_excel("../data/Base de datos-Incanet-Patología-INCAN .xlsx", 
+                   skip = 2) 
 
-gp <- ggplot(pre_nduf, aes(x = resistant, y = ihc_score_ndu_fpre_nac,
-                           color = resistant)) +
-  geom_violin(size = 1) +
-  stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
-  geom_point(position = position_jitter(seed = 1, width = 0.2)) +
-  ylab("IHC Score") +
-  xlab("") +
-  ggtitle("NDUFAF3 score preNAC") +
-  theme_bw(base_size = 24) +
-  stat_compare_means(method = "wilcox.test", show.legend = F,  label.y.npc = "bottom",
-                     label.x.npc = "center") +
-  scale_x_discrete(labels=c("Sensitive","Resistant")) +
-  scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
+ihq <- read_excel("../data/Datos crudos.xlsx", sheet = "IHQ_n=31ER+", skip=3, 
+          col_names = c("folio", "resistant", "NDUFAF3_porcentaje_positividad",
+                        "NDUFAF3_positividad", "NDUFAF3_intensidad", "NDUFAF3_score", 
+                        "GRIA4_porcentaje_positividad",  "GRIA4_positividad", 
+                        "GRIA4_intensidad", "GRIA4_score")) 
 
-png(filename = "plots_IHQ/NDUFAF3_score.png", width = 800, height = 400)
-print(gp)
-dev.off()
 
-gp <- ggplot(pre_nduf, aes(x = resistant, y = score_positivity_ndu_fpre_nac,
-                           color = resistant)) +
-  geom_violin(size = 1) +
-  stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
-  geom_point(position = position_jitter(seed = 1, width = 0.2)) +
-  ylab("IHC Positivity") +
-  xlab("") +
-  ggtitle("NDUFAF3 score preNAC") +
-  theme_bw(base_size = 24) +
-  stat_compare_means(method = "wilcox.test", show.legend = F, label.y.npc = "bottom",
-                     label.x.npc = "center") +
-  scale_x_discrete(labels=c("Sensitive","Resistant")) +
-  scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
-
-png(filename = "plots_IHQ/NDUFAF3_positivity.png", width = 800, height = 400)
-print(gp)
-dev.off()
-
-gp <- ggplot(pre_nduf, aes(x = resistant, y = score_intensity_ndu_fpre_nac,
-                           color = resistant)) +
-  geom_violin(size = 1) +
-  stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
-  geom_point(position = position_jitter(seed = 1, width = 0.2)) +
-  ylab("IHC Intensity") +
-  xlab("") +
-  ggtitle("NDUFAF3 score preNAC") +
-  theme_bw(base_size = 24) +
-  stat_compare_means(method = "wilcox.test", show.legend = F, label.y.npc = "bottom",
-                     label.x.npc = "center") +
-  scale_x_discrete(labels=c("Sensitive","Resistant")) +
-  scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
-
-png(filename = "plots_IHQ/NDUFAF3_intensity.png", width = 800, height = 400)
-print(gp)
-dev.off()
-
-# b) Comparación de la expresión entre resistentes antes y después de 
-# recibir la quimio: IHC_score_NDUFpreNAC vs  IHC_score_NDUFposNAC 
-# (seleccionando solo a resistentes)
-r_nduf <- ihq %>% select(ic_bx1, ihc_score_ndu_fpre_nac, 
-                         score_positivity_ndu_fpre_nac, 
-                         score_intensity_ndu_fpre_nac, rcb_class, resistant) %>%
-      filter(resistant == 1 & !is.na(ihc_score_ndu_fpre_nac)) %>% 
-      rename("score" = "ihc_score_ndu_fpre_nac",
-             "positivity" = "score_positivity_ndu_fpre_nac",
-             "intensity" = "score_intensity_ndu_fpre_nac") %>%
-      mutate(class = "preNac") %>%
-      bind_rows(ihq %>% select(ic_bx1, ihc_score_ndu_fpos_nac, 
-                         score_positivity_ndu_fpos_nac, 
-                         score_intensity_ndu_fpos_nac, rcb_class, resistant) %>%
-                   filter(resistant == 1 & !is.na(ihc_score_ndu_fpos_nac)) %>% 
-                   rename("score" = "ihc_score_ndu_fpos_nac",
-                          "positivity" = "score_positivity_ndu_fpos_nac",
-                          "intensity" = "score_intensity_ndu_fpos_nac")  %>%
-                  mutate(class = "posNac")) %>%
-      mutate(class = factor(class, levels = c("preNac", "posNac")))
-  
-
-gp <- ggplot(r_nduf, aes(x = class, y = score, color = class)) +
-  geom_violin(size = 1) +
-  stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
-  geom_point(position = position_jitter(seed = 1, width = 0.2)) +
-  labs(x = "", y = "IHC Score", 
-       title = "Resistant NDUFAF3 score preNAC vs posNAC") +
-  theme_bw(base_size = 24) +
-  stat_compare_means(method = "wilcox.test", show.legend = F, label.y.npc = "bottom",
-                     label.x.npc = "center") +
-  scale_x_discrete(labels=c("preNac","posNac")) +
-  scale_color_brewer(palette = "Set1", name = "")
-
-png(filename = "plots_IHQ/resistant_NDUFAF3_score.png", width = 800, height = 400)
-print(gp)
-dev.off()
-
-gp <- ggplot(r_nduf, aes(x = class, y = intensity, color = class)) +
-  geom_violin(size = 1) +
-  stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
-  geom_point(position = position_jitter(seed = 1, width = 0.2)) +
-  labs(x = "", y = "IHC Intensity", 
-       title = "Resistant NDUFAF3 intensity preNAC vs posNAC") +
-  theme_bw(base_size = 24) +
-  stat_compare_means(method = "wilcox.test", show.legend = F, label.y.npc = "bottom",
-                     label.x.npc = "center") +
-  scale_x_discrete(labels=c("preNac","posNac")) +
-  scale_color_brewer(palette = "Set1", name = "")
-
-png(filename = "plots_IHQ/resistant_NDUFAF3_intensity.png", width = 800, height = 400)
-print(gp)
-dev.off()
-
-gp <- ggplot(r_nduf, aes(x = class, y = positivity, color = class)) +
-  geom_violin(size = 1) +
-  stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
-  geom_point(position = position_jitter(seed = 1, width = 0.2)) +
-  labs(x = "", y = "IHC Positivity", 
-       title = "Resistant NDUFAF3 positivity preNAC vs posNAC") +
-  theme_bw(base_size = 24) +
-  stat_compare_means(method = "wilcox.test", show.legend = F, label.y.npc = "bottom",
-                     label.x.npc = "center") +
-  scale_x_discrete(labels=c("preNac","posNac")) +
-  scale_color_brewer(palette = "Set1", name = "")
-
-png(filename = "plots_IHQ/resistant_NDUFAF3_positivity.png", width = 800, height = 400)
-print(gp)
-dev.off()
-
-# a) Comparación de la expresión entre sensibles y resistentes
-# antes de recibir la quimio: IHC_score_NDUFpreNAC (sensibles vs resistentes)
-pre_gria <- ihq %>% filter(pre_nac == 1) %>%
-  select(folio, ihc_score_gri_apre_nac, score_positivity_gri_apre_nac, 
-                           score_intensity_gri_apre_nac,
-                           rcb_class, resistant) %>%
-  filter(!is.na(ihc_score_gri_apre_nac)) %>%
+### NDUFAF3 violin y boxplots
+png(filename = "plots_IHQ/NDUFAF3_score_violin.png", width = 800, height = 600)
+ihq %>% select(resistant, NDUFAF3_score) %>% 
+  filter(!is.na(NDUFAF3_score)) %>%
   mutate(resistant = as.factor(resistant)) %>%
-  arrange(resistant, ihc_score_gri_apre_nac)
-
-
-gp <- ggplot(pre_gria, aes(x = resistant, y = ihc_score_gri_apre_nac,
-                           color = resistant)) +
-  geom_violin(size = 1) +
-  stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
-  geom_point(position = position_jitter(seed = 1, width = 0.2)) +
+  ggplot(., aes(x = resistant, y = NDUFAF3_score, color = resistant)) +
+  geom_violin(size = 2, show.legend = F) +
+  geom_dotplot(binaxis= "y", binwidth = 1/2,
+               stackdir = "center",
+               dotsize = 1,  fill = 1, color = 1) +
+  stat_summary(fun = "median", geom = "crossbar", show.legend = F) +
   ylab("IHC Score") +
   xlab("") +
-  ggtitle("GRIA4 score preNAC") +
-  theme_bw(base_size = 24) +
+  ggtitle("NDUFAF3 score") +
+  theme_bw(base_size = 30) +
+  stat_compare_means(method = "wilcox.test", show.legend = F,  label.y.npc = "bottom",
+                     label.x.npc = "center", ) +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
+  scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
+dev.off()
+
+png(filename = "plots_IHQ/NDUFAF3_score_boxplot.png", width = 800, height = 600)
+ihq %>% select(resistant, NDUFAF3_score) %>% 
+  filter(!is.na(NDUFAF3_score)) %>%
+  mutate(resistant = as.factor(resistant)) %>%
+  ggplot(., aes(x = resistant, y = NDUFAF3_score, color = resistant)) +
+  geom_boxplot(size = 2, show.legend = F) +
+  geom_dotplot(binaxis= "y", binwidth = 1/2,
+               stackdir = "center",
+               dotsize = 1,  fill = 1, color = 1) +
+  ylab("IHC Score") +
+  xlab("") +
+  ggtitle("NDUFAF3 score") +
+  theme_bw(base_size = 30) +
+  stat_compare_means(method = "wilcox.test", show.legend = F,  label.y.npc = "bottom",
+                     label.x.npc = "center", ) +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
+  scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
+dev.off()
+
+png(filename = "plots_IHQ/NDUFAF3_positividad_violin.png", width = 800, height = 600)
+ihq %>% select(resistant, NDUFAF3_positividad) %>% 
+  filter(!is.na(NDUFAF3_positividad)) %>%
+  mutate(resistant = as.factor(resistant)) %>%
+  ggplot(., aes(x = resistant, y = NDUFAF3_positividad, color = resistant)) +
+  geom_violin(size = 2, show.legend = F) +
+  geom_dotplot(binaxis= "y", binwidth = 1/2,
+               stackdir = "center",
+               dotsize = 0.4,  fill = 1, color = 1) +
+  stat_summary(fun = "median", geom = "crossbar", show.legend = F) +
+  ylab("IHC positivity score") +
+  xlab("") +
+  ggtitle("NDUFAF3 positivity") +
+  theme_bw(base_size = 30) +
+  stat_compare_means(method = "wilcox.test", show.legend = F,  label.y.npc = "bottom",
+                     label.x.npc = "center", ) +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
+  scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
+dev.off()
+
+png(filename = "plots_IHQ/NDUFAF3_positividad_boxplot.png", width = 800, height = 600)
+ihq %>% select(resistant, NDUFAF3_positividad) %>% 
+  filter(!is.na(NDUFAF3_positividad)) %>%
+  mutate(resistant = as.factor(resistant)) %>%
+  ggplot(., aes(x = resistant, y = NDUFAF3_positividad, color = resistant)) +
+  geom_boxplot(size = 2, show.legend = F) +
+  geom_dotplot(binaxis= "y", binwidth = 1/2,
+               stackdir = "center",
+               dotsize = 0.4,  fill = 1, color = 1) +
+  ylab("IHC positivity score") +
+  xlab("") +
+  ggtitle("NDUFAF3 positivity") +
+  theme_bw(base_size = 30) +
+  stat_compare_means(method = "wilcox.test", show.legend = F,  label.y.npc = "bottom",
+                     label.x.npc = "center", ) +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
+  scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
+dev.off()
+
+
+png(filename = "plots_IHQ/NDUFAF3_intensity_violin.png", width = 800, height = 600)
+ihq %>% select(resistant, NDUFAF3_intensidad) %>% 
+  filter(!is.na(NDUFAF3_intensidad)) %>%
+  mutate(resistant = as.factor(resistant)) %>%
+  ggplot(., aes(x = resistant, y = NDUFAF3_intensidad, color = resistant)) +
+  geom_violin(size = 2, show.legend = F) +
+  geom_dotplot(binaxis= "y", binwidth = 1/2,
+               stackdir = "center",
+               dotsize = 0.3,  fill = 1, color = 1) +
+  stat_summary(fun = "median", geom = "crossbar", show.legend = F) +
+  ylab("IHC intensity score") +
+  xlab("") +
+  ggtitle("NDUFAF3 intensity") +
+  theme_bw(base_size = 30) +
+  stat_compare_means(method = "wilcox.test", show.legend = F,  label.y.npc = "bottom",
+                     label.x.npc = "center", ) +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
+  scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
+dev.off()
+
+png(filename = "plots_IHQ/NDUFAF3_intensity_boxplot.png", width = 800, height = 600)
+ihq %>% select(resistant, NDUFAF3_intensidad) %>% 
+  filter(!is.na(NDUFAF3_intensidad)) %>%
+  mutate(resistant = as.factor(resistant)) %>%
+  ggplot(., aes(x = resistant, y = NDUFAF3_intensidad, color = resistant)) +
+  geom_boxplot(size = 2, show.legend = F) +
+  geom_dotplot(binaxis= "y", binwidth = 1/2,
+               stackdir = "center",
+               dotsize = 0.3,  fill = 1, color = 1) +
+  ylab("IHC intensity score") +
+  xlab("") +
+  ggtitle("NDUFAF3 intensity") +
+  theme_bw(base_size = 30) +
+  stat_compare_means(method = "wilcox.test", show.legend = F,  label.y.npc = "bottom",
+                     label.x.npc = "center", ) +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
+  scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
+dev.off()
+
+#### GRIA4 violin y boxplots
+png(filename = "plots_IHQ/GRIA4_score_violin.png", width = 800, height = 600)
+ihq %>% select(resistant, GRIA4_score) %>% 
+  filter(!is.na(GRIA4_score)) %>%
+  mutate(resistant = as.factor(resistant)) %>%
+  ggplot(., aes(x = resistant, y = GRIA4_score, color = resistant)) +
+  geom_violin(size = 2, show.legend = F) +
+  geom_dotplot(binaxis= "y", binwidth = 1/2,
+               stackdir = "center",
+               dotsize = 1,  fill = 1, color = 1) +
+  stat_summary(fun = "median", geom = "crossbar", show.legend = F) +
   geom_signif(comparisons = list(c("0", "1")), 
               map_signif_level=TRUE, size = 1, color = "black", 
-              vjust = 0.5, textsize = 7) +
-  stat_compare_means(method = "wilcox.test", show.legend = F, label.y.npc = "bottom",  
-                     label.x.npc = "center") +
+              vjust = 0.5, textsize = 10) +
+  ylab("IHC Score") +
+  xlab("") +
+  ggtitle("GRIA4 score") +
+  theme_bw(base_size = 30) +
+  stat_compare_means(method = "wilcox.test", show.legend = F,  label.y.npc = "bottom",
+                     label.x.npc = "center", ) +
   scale_x_discrete(labels=c("Sensitive","Resistant")) +
   scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
-
-png(filename = "plots_IHQ/GRIA4_score.png", width = 800, height = 400)
-print(gp)
 dev.off()
 
-gp <- ggplot(pre_gria, aes(x = resistant, y = score_positivity_gri_apre_nac,
-                           color = resistant)) +
-  geom_violin(size = 1) +
-  stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
-  geom_point(position = position_jitter(seed = 1, width = 0.2)) +
-  ylab("IHC Positivity") +
-  xlab("") +
-  ggtitle("GRIA4 positivity preNAC") +
+png(filename = "plots_IHQ/GRIA4_score_boxplot.png", width = 800, height = 600)
+ihq %>% select(resistant, GRIA4_score) %>% 
+  filter(!is.na(GRIA4_score)) %>%
+  mutate(resistant = as.factor(resistant)) %>%
+  ggplot(., aes(x = resistant, y = GRIA4_score, color = resistant)) +
+  geom_boxplot(size = 2, show.legend = F) +
+  geom_dotplot(binaxis= "y", binwidth = 1/2,
+               stackdir = "center",
+               dotsize = 1,  fill = 1, color = 1) +
   geom_signif(comparisons = list(c("0", "1")), 
               map_signif_level=TRUE, size = 1, color = "black", 
-              vjust = 0.5, textsize = 7) +
-  theme_bw(base_size = 24) +
-  stat_compare_means(method = "wilcox.test", show.legend = F, label.y.npc = "bottom", 
-                     label.x.npc = "center") +
-  scale_x_discrete(labels=c("Sensitive","Resistant")) +
-  scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
-
-png(filename = "plots_IHQ/GRIA4_positivity.png", width = 800, height = 400)
-print(gp)
-dev.off()
-
-
-gp <- ggplot(pre_gria, aes(x = resistant, y = score_intensity_gri_apre_nac,
-                           color = resistant)) +
-  geom_violin(size = 1) +
-  stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F) +
-  geom_point(position = position_jitter(seed = 1, width = 0.2)) +
-  ylab("IHC Intensity") +
+              vjust = 0.5, textsize = 10) +
+  ylab("IHC Score") +
   xlab("") +
-  ggtitle("GRIA4 intensity preNAC") +
-  theme_bw(base_size = 24) +
-  stat_compare_means(method = "wilcox.test", show.legend = F, label.y.npc = "bottom",
-                     label.x.npc = "center") +
+  ggtitle("NDUFAF3 score") +
+  theme_bw(base_size = 30) +
+  stat_compare_means(method = "wilcox.test", show.legend = F,  label.y.npc = "bottom",
+                     label.x.npc = "center", ) +
   scale_x_discrete(labels=c("Sensitive","Resistant")) +
   scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
-
-png(filename = "plots_IHQ/GRIA4_intensity.png", width = 800, height = 400)
-print(gp)
 dev.off()
 
+png(filename = "plots_IHQ/GRIA4_positividad_violin.png", width = 800, height = 600)
+ihq %>% select(resistant, GRIA4_positividad) %>% 
+  filter(!is.na(GRIA4_positividad)) %>%
+  mutate(resistant = as.factor(resistant)) %>%
+  ggplot(., aes(x = resistant, y = GRIA4_positividad, color = resistant)) +
+  geom_violin(size = 2, show.legend = F) +
+  geom_dotplot(binaxis= "y", binwidth = 1/2,
+               stackdir = "center",
+               dotsize = 0.4,  fill = 1, color = 1) +
+  stat_summary(fun = "median", geom = "crossbar", show.legend = F) +
+  ylab("IHC positivity score") +
+  xlab("") +
+  ggtitle("GRIA4 positivity") +
+  theme_bw(base_size = 30) +
+  stat_compare_means(method = "wilcox.test", show.legend = F,  label.y.npc = "bottom",
+                     label.x.npc = "center", ) +
+  geom_signif(comparisons = list(c("0", "1")), 
+              map_signif_level=TRUE, size = 1, color = "black", 
+              vjust = 0.5, textsize = 10) +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
+  scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
+dev.off()
+
+png(filename = "plots_IHQ/GRIA4_positividad_boxplot.png", width = 800, height = 600)
+ihq %>% select(resistant, GRIA4_positividad) %>% 
+  filter(!is.na(GRIA4_positividad)) %>%
+  mutate(resistant = as.factor(resistant)) %>%
+  ggplot(., aes(x = resistant, y = GRIA4_positividad, color = resistant)) +
+  geom_boxplot(size = 2, show.legend = F) +
+  geom_dotplot(binaxis= "y", binwidth = 1/2,
+               stackdir = "center",
+               dotsize = 0.4,  fill = 1, color = 1) +
+  ylab("IHC positivity score") +
+  xlab("") +
+  ggtitle("GRIA4 positivity") +
+  theme_bw(base_size = 30) +
+  stat_compare_means(method = "wilcox.test", show.legend = F,  label.y.npc = "bottom",
+                     label.x.npc = "center", ) +
+  geom_signif(comparisons = list(c("0", "1")), 
+              map_signif_level=TRUE, size = 1, color = "black", 
+              vjust = 0.5, textsize = 10) +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
+  scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
+dev.off()
+
+png(filename = "plots_IHQ/GRIA4_intensidad_violin.png", width = 800, height = 600)
+ihq %>% select(resistant, GRIA4_intensidad) %>% 
+  filter(!is.na(GRIA4_intensidad)) %>%
+  mutate(resistant = as.factor(resistant)) %>%
+  ggplot(., aes(x = resistant, y = GRIA4_intensidad, color = resistant)) +
+  geom_violin(size = 2, show.legend = F) +
+  geom_dotplot(binaxis= "y", binwidth = 1/2,
+               stackdir = "center",
+               dotsize = 0.3,  fill = 1, color = 1) +
+  stat_summary(fun = "median", geom = "crossbar", show.legend = F) +
+  ylab("IHC intensity score") +
+  xlab("") +
+  ggtitle("GRIA4 intensity") +
+  theme_bw(base_size = 30) +
+  stat_compare_means(method = "wilcox.test", show.legend = F,  label.y.npc = "bottom",
+                     label.x.npc = "center", ) +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
+  scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
+dev.off()
+
+png(filename = "plots_IHQ/GRIA4_intensidad_boxplot.png", width = 800, height = 600)
+ihq %>% select(resistant, GRIA4_intensidad) %>% 
+  filter(!is.na(GRIA4_intensidad)) %>%
+  mutate(resistant = as.factor(resistant)) %>%
+  ggplot(., aes(x = resistant, y = GRIA4_intensidad, color = resistant)) +
+  geom_boxplot(size = 2, show.legend = F) +
+  geom_dotplot(binaxis= "y", binwidth = 1/2,
+               stackdir = "center",
+               dotsize = 0.3,  fill = 1, color = 1) +
+  ylab("IHC intensity score") +
+  xlab("") +
+  ggtitle("GRIA4 intensity") +
+  theme_bw(base_size = 30) +
+  stat_compare_means(method = "wilcox.test", show.legend = F,  label.y.npc = "bottom",
+                     label.x.npc = "center", ) +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
+  scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
+dev.off()

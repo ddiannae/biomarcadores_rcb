@@ -6,6 +6,7 @@ library(dplyr)
 library(pathview)
 library(org.Hs.eg.db)
 library(ggplot2)
+library(purrr)
 
 load("../data/INCAN_Mama_12-copy.RData")
 
@@ -41,28 +42,6 @@ ekk_down <- enrichKEGG(gene = down %>% pull(entrezgene_id),
 head(ekk_down)
 
 
-png(filename = paste0("plots/KEGG_down_enrichments.png"), width = 800, height = 600)
-dotplot(ekk_down, showCategory=30) + 
-  ggtitle("KEGG enrichments. Downregulated genes") + 
-  theme_bw(base_size = 20)
-dev.off()
-
-
-ekk <- enrichKEGG(gene = deg %>% pull(entrezgene_id),
-                  organism = 'hsa',
-                  keyType = "ncbi-geneid",
-                  universe = universe[["entrezgene_id"]],
-                  pvalueCutoff = 0.05,
-                  pAdjustMethod = "fdr",
-                  qvalueCutoff = 0.2)
-head(ekk)
-
-png(filename = paste0("plots/KEGG_enrichments.png"), width = 800, height = 600)
-dotplot(ekk, showCategory=30) + 
-  ggtitle("KEGG enrichments") + 
-  theme_bw(base_size = 20)
-dev.off()
-
 ego_up <- enrichGO(gene = up %>% pull(entrezgene_id),
                 universe      = universe[["entrezgene_id"]],
                 OrgDb         = org.Hs.eg.db,
@@ -72,11 +51,6 @@ ego_up <- enrichGO(gene = up %>% pull(entrezgene_id),
                 qvalueCutoff  = 0.2,
                 readable      = TRUE)
 head(ego_up)
-
-png(filename = paste0("plots/GO_up_enrichments.png"), width = 800, height = 600)
-dotplot(ego_up, showCategory=30) + ggtitle("GO enrichments. Upregulated genes") + 
-  theme_bw(base_size = 24)
-dev.off()
 
 ego_down <- enrichGO(gene = down %>% pull(entrezgene_id),
                    universe      = universe[["entrezgene_id"]],
@@ -88,11 +62,6 @@ ego_down <- enrichGO(gene = down %>% pull(entrezgene_id),
                    readable      = TRUE)
 head(ego_down)
 
-png(filename = paste0("plots/GO_down_enrichments.png"), width = 800, height = 600)
-dotplot(ego_down, showCategory=30) + ggtitle("GO enrichments. Downregulated genes") + 
-  theme_bw(base_size = 24)
-dev.off()
-
 ego <- enrichGO(gene = deg %>% pull(entrezgene_id),
                universe      = universe[["entrezgene_id"]],
                OrgDb         = org.Hs.eg.db,
@@ -103,7 +72,66 @@ ego <- enrichGO(gene = deg %>% pull(entrezgene_id),
                readable      = TRUE)
 head(ego)
 
-png(filename = paste0("plots/GO_enrichments.png"), width = 800, height = 800)
-dotplot(ego, showCategory=30) + ggtitle("GO enrichments") + 
-  theme_bw(base_size = 24)
+png(filename = paste0("plots/KEGG_down_enrichments.png"), width = 800, height = 600)
+dotplot(ekk_down, showCategory=30) + 
+  ggtitle("KEGG enrichments. Downregulated genes") + 
+  theme_bw(base_size = 20)
 dev.off()
+
+go_results <- ego_up@result %>% filter(p.adjust < 0.05) %>%
+  mutate(category = "Upregulated") %>% bind_rows(
+ego_down@result %>% filter(p.adjust < 0.05) %>%
+  mutate(category = "Downregulated")) %>% 
+  clean_names() %>%
+  mutate(order_label =  paste(category, description, sep = "-"))
+
+go_results$gr <- map_dbl(go_results$gene_ratio, function(x){
+  nums <- as.numeric(unlist(strsplit(x, "/")))
+  return(nums[1]/nums[2])
+})
+
+png(filename = paste0("plots/GO_enrichments.png"), width = 950, height = 600)
+ggplot(go_results, aes(x = category, y = order_label, color = p_adjust))  +
+  geom_point(aes(size = count)) +
+  theme_bw(base_size = 26) +
+  theme(legend.key.size  = unit(0.8, 'cm'))+
+  scale_y_discrete(labels = ~ map_chr(., ~ unlist(strsplit(., "-"))[2]), 
+                   limits=rev) +
+  labs(x = "", y = element_blank(), title = "Gene Ontology enrichments") + 
+  scale_color_viridis_c(name = "Padj", direction = -1, option = "plasma",
+                        breaks = c(0, 0.01, 0.02, 0.03, 0.04, 0.05), 
+                        limits = c(0, 0.05), 
+                        labels = c("", 0.01, 0.02, 0.03, 0.04,  0.05)) +
+  scale_size(name = "Count",range = c(4, 10), breaks = c(3, 5, 7, 9),
+             limits = c(3, 9))
+dev.off()
+
+
+kegg_results <- ekk_up@result %>% filter(p.adjust < 0.05) %>%
+  mutate(category = "Upregulated") %>% bind_rows(
+    ekk_down@result %>% filter(p.adjust < 0.05) %>%
+      mutate(category = "Downregulated")) %>% 
+  clean_names() %>%
+  mutate(order_label =  paste(category, description, sep = "-"))
+  
+kegg_results$gr <- map_dbl(kegg_results$gene_ratio, function(x){
+  nums <- as.numeric(unlist(strsplit(x, "/")))
+  return(nums[1]/nums[2])
+})
+
+png(filename = paste0("plots/KEGG_enrichments.png"), width = 950, height = 500)
+ggplot(kegg_results, aes(x = category, y = order_label, color = p_adjust))  +
+  geom_point(aes(size = count)) +
+  theme_bw(base_size = 26) +
+  theme(legend.key.size  = unit(0.8, 'cm'))+
+  scale_y_discrete(labels = ~ map_chr(., ~ unlist(strsplit(., "-"))[2]), 
+                   limits=rev) +
+  labs(x = "", y = element_blank(), title = "KEGG enrichments") + 
+  scale_color_viridis_c(name = "Padj", direction = -1, option = "plasma",
+                        breaks = c(0, 0.01, 0.02, 0.03, 0.04, 0.05), 
+                        limits = c(0, 0.05), 
+                        labels = c("", 0.01, 0.02, 0.03, 0.04,  0.05)) +
+  scale_size(name = "Count",range = c(4, 10), breaks = c(3, 5, 7, 9),
+             limits = c(3, 9))
+dev.off()
+

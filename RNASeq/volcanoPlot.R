@@ -1,6 +1,5 @@
 library(dplyr)
-library(ggplot2)
-
+library(EnhancedVolcano)
 
 load("../data/INCAN_Mama_12-copy.RData")
 
@@ -11,27 +10,30 @@ brca.res.df <- brca.res.df %>%
                                      "NS")),
          regulated = as.factor(regulated), 
          label = if_else(external_gene_name %in%  c("SLC12A1", "NDUFAF3", "GRIA4"), 
-                         external_gene_name, ""))
+                         external_gene_name, NA_character_))
 
-regulated.colors <- c("aquamarine4", "black", "brown3")
-names(regulated.colors) <- levels(brca.res.df$regulated)
+png(filename = "plots/volcano.png", width = 1200, height = 600)
+EnhancedVolcano(brca.res.df,
+                lab = brca.res.df$external_gene_name,
+                selectLab =  c("SLC12A1", "NDUFAF3", "GRIA4"),
+                x = 'log2FoldChange',
+                y = 'padj',
+                title ="",
+                subtitle = "",
+                ylab = "-log10(padj)",
+                ylim = c(0,8),
+                axisLabSize = 30,
+                pCutoff = 0.05,
+                pointSize = 5,
+                FCcutoff = 1,
+                titleLabSize = 30,
+                labSize = 12,
+                drawConnectors = TRUE,
+                boxedLabels = TRUE,
+                legendPosition = "top", 
+                legendLabSize = 32,
+                caption ="",
+                col=c('black', 'darkgreen', 'red', 'orange'),
+                colAlpha = 4/5)
 
-options(ggrepel.max.overlaps = Inf)
-
-volcano <- ggplot(brca.res.df, aes(x = log2FoldChange, y = -log10(padj), 
-                        color = regulated, label = label)) +
-  geom_point(size = 2) + 
-  geom_hline(yintercept = -log10(0.05), linetype= "dashed") +
-  geom_vline(xintercept = -1, linetype= "dashed") +
-  geom_vline(xintercept = 1, linetype= "dashed") +
-  xlim(-10,10) + 
-  scale_color_manual(values = regulated.colors) +
-  ggrepel::geom_label_repel(color = "black", size = 8) +
-  theme_bw(base_size = 24) +
-  theme(legend.title = element_blank())
-
-
-png(filename = "plots/volcano.png", width = 800, height = 400)
-print(volcano)
 dev.off()
-

@@ -15,7 +15,7 @@ brca.res.df <- brca.res.df %>%
 png(filename = "plots/volcano.png", width = 1200, height = 600)
 EnhancedVolcano(brca.res.df,
                 lab = brca.res.df$external_gene_name,
-                selectLab =  c("SLC12A1", "NDUFAF3", "GRIA4"),
+                selectLab = "",
                 x = 'log2FoldChange',
                 y = 'padj',
                 title ="",

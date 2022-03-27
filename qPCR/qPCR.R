@@ -11,7 +11,7 @@ pacientes <- read_excel("../data/Base de datos-Incanet-Patología-INCAN .xlsx",
 qpcr <- read_excel("../data/Datos crudos.xlsx", sheet = "qPCR_n=24ER+", 
           skip = 1) %>% clean_names()
 
-qpcr <- qpcr %>% select(colnames(qpcr)[c(1,35:42)]) 
+qpcr <- qpcr %>% select(colnames(qpcr)[c(1,43:50)]) 
 colnames(qpcr) <- c("folio", "abhd14b", "ndufaf3", "tex264", "ghr", "gria4", 
                     "hgd", "slc12a", "sostcd1")
 

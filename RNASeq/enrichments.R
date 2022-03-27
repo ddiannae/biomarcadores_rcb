@@ -14,7 +14,7 @@ brca.res.df <- as_tibble(brca.res.df)
 
 deg <- brca.res.df %>% 
   dplyr::select(ensembl_gene_id, entrezgene_id, hgnc_symbol, log2FoldChange, padj) %>%
-  filter(padj < 0.05)
+  filter(padj < 0.05 & abs(log2FoldChange) > 2)
 
 up <- deg %>% filter(log2FoldChange > 0)
 down <- deg %>% filter(log2FoldChange < 0)
@@ -62,22 +62,6 @@ ego_down <- enrichGO(gene = down %>% pull(entrezgene_id),
                    readable      = TRUE)
 head(ego_down)
 
-ego <- enrichGO(gene = deg %>% pull(entrezgene_id),
-               universe      = universe[["entrezgene_id"]],
-               OrgDb         = org.Hs.eg.db,
-               ont           = "BP",
-               pAdjustMethod = "BH",
-               pvalueCutoff  = 0.05,
-               qvalueCutoff  = 0.2,
-               readable      = TRUE)
-head(ego)
-
-png(filename = paste0("plots/KEGG_down_enrichments.png"), width = 800, height = 600)
-dotplot(ekk_down, showCategory=30) + 
-  ggtitle("KEGG enrichments. Downregulated genes") + 
-  theme_bw(base_size = 20)
-dev.off()
-
 go_results <- ego_up@result %>% filter(p.adjust < 0.05) %>%
   mutate(category = "Upregulated") %>% bind_rows(
 ego_down@result %>% filter(p.adjust < 0.05) %>%
@@ -102,8 +86,8 @@ ggplot(go_results, aes(x = category, y = order_label, color = p_adjust))  +
                         breaks = c(0, 0.01, 0.02, 0.03, 0.04, 0.05), 
                         limits = c(0, 0.05), 
                         labels = c("", 0.01, 0.02, 0.03, 0.04,  0.05)) +
-  scale_size(name = "Count",range = c(4, 10), breaks = c(3, 5, 7, 9),
-             limits = c(3, 9))
+  scale_size(name = "Count",range = c(1, 10), breaks = c(1, 3, 5, 7, 9, 11),
+             limits = c(1, 11))
 dev.off()
 
 
@@ -131,7 +115,7 @@ ggplot(kegg_results, aes(x = category, y = order_label, color = p_adjust))  +
                         breaks = c(0, 0.01, 0.02, 0.03, 0.04, 0.05), 
                         limits = c(0, 0.05), 
                         labels = c("", 0.01, 0.02, 0.03, 0.04,  0.05)) +
-  scale_size(name = "Count",range = c(4, 10), breaks = c(3, 5, 7, 9),
-             limits = c(3, 9))
+  scale_size(name = "Count",range = c(1, 10), breaks = c(1, 3, 5, 7, 9, 11),
+             limits = c(1, 11))
 dev.off()
 

@@ -20,7 +20,7 @@ up <- deg %>% filter(log2FoldChange > 0)
 down <- deg %>% filter(log2FoldChange < 0)
 
 universe <-  brca.res.df %>% janitor::clean_names() %>%
-  filter(gene_biotype =="protein_coding") %>% as_tibble()
+   as_tibble()
 
 ekk_up <- enrichKEGG(gene = up %>% pull(entrezgene_id),
                   organism = 'hsa',
@@ -118,4 +118,3 @@ ggplot(kegg_results, aes(x = category, y = order_label, color = p_adjust))  +
   scale_size(name = "Count",range = c(1, 10), breaks = c(1, 3, 5, 7, 9, 11),
              limits = c(1, 11))
 dev.off()
-

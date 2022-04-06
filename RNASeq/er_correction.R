@@ -1,5 +1,7 @@
 library(sva)
 library(edgeR)
+library(readr)
+library(dplyr)
 
 load("../data/RNAseqMDA_109.RData")
 
@@ -39,7 +41,14 @@ rownames(tmp.zscores.cpm) <- names(genes)
 all_genes <- rownames(salmon.zscores.cpm)
 salmon.zscores.cpm <- as_tibble(salmon.zscores.cpm) 
 salmon.zscores.cpm$ensembl_id <- all_genes
-write_csv(salmon.zscores.cpm %>% dplyr::select(ensembl_id, everything()), "cpm_zcores.tsv")
+annot.biomart.df <- annot.biomart.df %>% 
+  select(ensembl_gene_id, hgnc_symbol) %>% as_tibble()
+
+salmon.zscores.cpm <- salmon.zscores.cpm %>% 
+  left_join(annot.biomart.df, by = c("ensembl_id" = "ensembl_gene_id")) %>%
+  select(ensembl_id, hgnc_symbol, everything())
+
+write_csv(salmon.zscores.cpm, "cpm_zcores.tsv")
 
 library(marray)
 library(pheatmap)

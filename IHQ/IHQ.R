@@ -261,3 +261,126 @@ ihq %>% select(resistant, GRIA4_intensidad) %>%
   scale_x_discrete(labels=c("Sensitive","Resistant")) +
   scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant"))
 dev.off()
+
+
+gria4_ndufaf3 <- ihq %>% select(resistant, score = NDUFAF3_score, 
+                                positividad = NDUFAF3_positividad,
+                                intensidad = NDUFAF3_intensidad) %>%
+  mutate(gen = "NDUFAF3") %>% bind_rows(
+    ihq %>% select(resistant, score = GRIA4_score,
+                   positividad = GRIA4_positividad,
+                   intensidad = GRIA4_intensidad) %>%
+      mutate(gen = "GRIA4")) %>%
+  filter(!is.na(score)) %>%
+  mutate(resistant = factor(resistant))
+
+gp <- ggplot(gria4_ndufaf3, aes(x = resistant, y = score)) +
+  geom_violin(color="grey", size = 2, show.legend = F) +
+  stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F,) +
+  geom_dotplot(aes(fill = gen), binaxis= "y", stackdir = "center", dotsize = 1) +
+  ylab("IHC Score") +
+  xlab("") +
+  ggtitle("GRIA4-NDUFAF3 score") +
+  theme_bw(base_size = 30) +
+  stat_compare_means(method = "wilcox.test", show.legend = F,  label.y.npc = "bottom",
+                     label.x.npc = "center") +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
+  scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant")) +
+  scale_fill_brewer(palette = "Pastel1", name = "")
+
+png(filename = paste0("plots_IHQ/GRIA4_NDUFAF3_score.png"), 
+    width = 800, height = 600)
+print(gp)
+dev.off()
+
+gp <- ggplot(gria4_ndufaf3, aes(x = resistant, y = score)) +
+  geom_boxplot(color="grey", size = 2, show.legend = F) +
+  geom_dotplot(aes(fill = gen), binaxis= "y", stackdir = "center", dotsize = 1) +
+  ylab("IHC Score") +
+  xlab("") +
+  ggtitle("GRIA4-NDUFAF3 score") +
+  theme_bw(base_size = 30) +
+  stat_compare_means(method = "wilcox.test", show.legend = F,  label.y.npc = "bottom",
+                     label.x.npc = "center") +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
+  scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant")) +
+  scale_fill_brewer(palette = "Pastel1", name = "")
+
+png(filename = paste0("plots_IHQ/GRIA4_NDUFAF3_score_boxplot.png"), 
+    width = 800, height = 600)
+print(gp)
+dev.off()
+
+gp <- ggplot(gria4_ndufaf3, aes(x = resistant, y = positividad)) +
+  geom_violin(color="grey", size = 2, show.legend = F) +
+  stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F,) +
+  geom_dotplot(aes(fill = gen), binaxis= "y", stackdir = "center", dotsize = 1) +
+  ylab("IHC Positivity") +
+  xlab("") +
+  ggtitle("GRIA4-NDUFAF3 positivity") +
+  theme_bw(base_size = 30) +
+  stat_compare_means(method = "wilcox.test", show.legend = F,  label.y.npc = "bottom",
+                     label.x.npc = "center") +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
+  scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant")) +
+  scale_fill_brewer(palette = "Pastel1", name = "")
+
+png(filename = paste0("plots_IHQ/GRIA4_NDUFAF3_positividad.png"), 
+    width = 800, height = 600)
+print(gp)
+dev.off()
+
+gp <- ggplot(gria4_ndufaf3, aes(x = resistant, y = positividad)) +
+  geom_boxplot(color="grey", size = 2, show.legend = F) +
+  geom_dotplot(aes(fill = gen), binaxis= "y", stackdir = "center", dotsize = 1) +
+  ylab("IHC Positivity") +
+  xlab("") +
+  ggtitle("GRIA4-NDUFAF3 positivity") +
+  theme_bw(base_size = 30) +
+  stat_compare_means(method = "wilcox.test", show.legend = F,  label.y.npc = "bottom",
+                     label.x.npc = "center") +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
+  scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant")) +
+  scale_fill_brewer(palette = "Pastel1", name = "")
+
+png(filename = paste0("plots_IHQ/GRIA4_NDUFAF3_positividad_boxplot.png"), 
+    width = 800, height = 600)
+print(gp)
+dev.off()
+
+gp <- ggplot(gria4_ndufaf3, aes(x = resistant, y = intensidad)) +
+  geom_violin(color="grey", size = 2, show.legend = F) +
+  stat_summary(fun = "median", geom = "crossbar", width = 0.5, show.legend = F,) +
+  geom_dotplot(aes(fill = gen), binaxis= "y", stackdir = "center", dotsize = 1) +
+  ylab("IHC Positivity") +
+  xlab("") +
+  ggtitle("GRIA4-NDUFAF3 positivity") +
+  theme_bw(base_size = 30) +
+  stat_compare_means(method = "wilcox.test", show.legend = F,  label.y.npc = "bottom",
+                     label.x.npc = "center") +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
+  scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant")) +
+  scale_fill_brewer(palette = "Pastel1", name = "")
+
+png(filename = paste0("plots_IHQ/GRIA4_NDUFAF3_intensidad.png"), 
+    width = 800, height = 600)
+print(gp)
+dev.off()
+
+gp <- ggplot(gria4_ndufaf3, aes(x = resistant, y = intensidad)) +
+  geom_boxplot(color="grey", size = 2, show.legend = F) +
+  geom_dotplot(aes(fill = gen), binaxis= "y", stackdir = "center", dotsize = 1) +
+  ylab("IHC Positivity") +
+  xlab("") +
+  ggtitle("GRIA4-NDUFAF3 positivity") +
+  theme_bw(base_size = 30) +
+  stat_compare_means(method = "wilcox.test", show.legend = F,  label.y.npc = "bottom",
+                     label.x.npc = "center") +
+  scale_x_discrete(labels=c("Sensitive","Resistant")) +
+  scale_color_brewer(palette = "Set2", name = "", labels = c("Sensitive", "Resistant")) +
+  scale_fill_brewer(palette = "Pastel1", name = "")
+
+png(filename = paste0("plots_IHQ/GRIA4_NDUFAF3_intensidad_boxplot.png"), 
+    width = 800, height = 600)
+print(gp)
+dev.off()
